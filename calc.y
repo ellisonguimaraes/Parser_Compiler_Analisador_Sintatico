@@ -47,6 +47,9 @@ extern int yylex (void);
 %left OR
 
 // Definindo os tipos da gramática
+%type <v> Rel
+%type <v> RelLB
+
 %type <v> Assign
 %type <l> AssignOP
 
@@ -55,6 +58,9 @@ extern int yylex (void);
 %type <v> Func
 %type <v> Fact
 %type <v> Primary
+
+%type <l> Unary
+%type <v> End
 
 
 %define parse.error verbose
@@ -72,7 +78,7 @@ Input:
 Line:	
 	EOL
 	| Assign EOL { printf("Atribuição: %f\n", $1); }
-	| Expr EOL { printf("Expressão: %f\n", $1); }
+	| Rel EOL { printf("Expressão: %f\n", $1); }
 	| VIEWHASHTABLE LBRACKET RBRACKET EOL { show_ht(hash_table); }
 
 Assign:
@@ -123,6 +129,18 @@ AssignOP:
 	| MULATTR { strcpy($$, "*="); }
 	| MODATTR { strcpy($$, "%="); }
 
+Rel:
+	RelLB
+	| Rel DIFF RelLB { $$ = $1 != $3; printf("%f == %f\n", $1, $3); }
+	| Rel EQUAL RelLB { $$ = $1 == $3; printf("%f != %f\n", $1, $3); }
+
+RelLB:
+	Expr
+	| RelLB MORE Expr { $$ = $1 > $3; printf("%f > %f\n", $1, $3); }
+	| RelLB LESS Expr { $$ = $1 < $3; printf("%f < %f\n", $1, $3); }
+	| RelLB MOREOREQUAL Expr { $$ = $1 >= $3; printf("%f >= %f\n", $1, $3); }
+	| RelLB LESSOREQUAL Expr { $$ = $1 <= $3; printf("%f <= %f\n", $1, $3); }
+
 Expr:
 	Term { $$ = $1; }
 	| Expr ADD Term { $$ = $1 + $3; printf("%f + %f\n", $1, $3); }
@@ -136,7 +154,16 @@ Term:
 
 Fact:
 	Func { $$ = $1; }
-	| SUB Func { $$ = -$2; }
+	| Unary Func  // ver porq coloquei end
+		{ 
+			if (strcmp($1, "-") == 0) {
+				$$ = -$2;
+				printf("-%f.\n", $2);
+			} else if (strcmp($1, "!") == 0) {
+				$$ = !$2;
+				printf("Negação (!) de %f.\n", $2);
+			}
+		}
 
 Func: 
 	Primary { $$ = $1; }
@@ -158,12 +185,21 @@ Primary:
 				yyerror(strerror);
 				YYABORT;
 			}
-
+			
+			printf("Acesso a variável %s.\n", n->key);
 			$$ = n->value;
 		}
 
-	| NUMBER { $$ = $1; }
-	| LBRACKET Expr RBRACKET { $$ = $2; printf("(%f)\n", $2); }
+	| NUMBER { $$ = $1; printf("Acesso ao número %f.\n", $1); }
+	| LBRACKET End RBRACKET { $$ = $2; printf("(%f)\n", $2); }
+
+Unary: 
+	SUB { strcpy($$, "-"); }
+	| NOT { strcpy($$, "!"); }
+
+End:
+	Rel { $$ = $1; }
+
 
 	
 %%
