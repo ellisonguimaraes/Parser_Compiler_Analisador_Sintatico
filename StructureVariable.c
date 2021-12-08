@@ -3,77 +3,113 @@
 #include <stdlib.h>
 #include <string.h>
 
-Variable* head = NULL;
-
-// Alocar um struct Variable e o retorna
-Variable* Allocate()
+// Calcula um HashCode com base em uma string
+unsigned int hashfunction(char *key)
 {
-    Variable* var = (Variable*)malloc(sizeof(Variable));
-    var->next = NULL;
-    return var;
+    unsigned long int value = 0;
+
+    for (int i = 0; i < strlen(key); ++i) {
+        value = value * 37 + key[i];
+    }
+
+    return value % SIZE;
 }
 
-// Percorre a lista encadeada procurando um Variable através do Lexeme
-Variable* GetVar(char lexeme[50])
+// Aloca um struct HashTable e coloca NULL em todas as posições
+hashtable* build_hash_table()
 {
-    Variable* current = head;
+    hashtable* ht = malloc(sizeof(hashtable));
 
-    while(current != NULL){
-        if(!strcmp(current->lexeme, lexeme))
-            return current;
+    ht->items = malloc(sizeof(node*) * SIZE);
 
-        current = current->next;
+    for(int i = 0; i < SIZE; i++) ht->items[i] = NULL;
+
+    return ht;
+}
+
+// Aloca um struct Node (par key~value)
+node* build_pair(char* key, double value)
+{
+    node* n = malloc(sizeof(node));
+    
+    n->key = malloc(strlen(key) + 1);
+    strcpy(n->key, key);
+
+    n->value = value;
+
+    n->next = NULL;
+
+    return n;
+}
+
+// Adiciona (ou atualiza, se a chave já existir) um nó
+void put_key_value_ht(hashtable* ht, char* key, double value)
+{
+    unsigned int index = hashfunction(key);
+
+    node* item_slot = ht->items[index];
+
+    if(item_slot == NULL)
+    {
+        ht->items[index] = build_pair(key, value);
+        return;
+    }
+
+    node* prev;
+
+    while(item_slot != NULL)
+    {
+        if(strcmp(item_slot->key, key) == 0)
+        {
+            item_slot->value = value;
+            return;
+        }
+
+        prev = item_slot;
+        item_slot = item_slot->next;
+    }
+
+    prev->next = build_pair(key, value);
+}
+
+// Obter um nó pela chave
+node* get_value_ht(hashtable* ht, char* key)
+{
+    unsigned int index = hashfunction(key);
+
+    node* item_slot = ht->items[index];
+
+    if(item_slot == NULL)
+        return NULL;
+
+    while(item_slot != NULL)
+    {
+        if(strcmp(item_slot->key, key) == 0)
+            return build_pair(item_slot->key, item_slot->value);
+
+        item_slot = item_slot->next;
     }
 
     return NULL;
 }
 
-// Adiciona uma nova Variable a lista encadeada (pelo HEAD)
-void AddVar(char lexeme[50], double value)
+// Printa na tela todos os dados da HashTable
+void show_ht(hashtable* ht)
 {
-    Variable* var = Allocate();
-    strcpy(var->lexeme, lexeme);
-    var->value = value;
+    for(int i = 0; i < SIZE; i++){
+        node* item_slot = ht->items[i];
 
-    if(head != NULL)
-        var->next = head;
-
-    head = var;
-}
-
-// Atualiza o value de um Variable (procurando pelo lexeme)
-void UpdateVar(char lexeme[50], double value)
-{
-    Variable* current = head;
-
-    while(current != NULL){
-        if(!strcmp(current->lexeme, lexeme))
+        if (item_slot != NULL)
         {
-            current->value = value;
-            break;
-        }
-    
-        current = current->next;
-    }
-}
+            printf("ITEM #%d:\t", i);
+        
+            while(item_slot != NULL)
+            {
+                printf("(%s, %f), ", item_slot->key, item_slot->value);
+                item_slot = item_slot->next;
+            }
 
-// Mostra toda a lista encadeada de Variable
-void ShowAllVar()
-{
-    Variable* current = head;
-    int count = 1;
-
-    printf("\n***********************\nVariáveis do Sistema\n***********************\n");
-
-    if(current == NULL){
-        printf("Não há nenhuma variável armazenada. :( \n");
-    }else{
-        while(current != NULL){
-            printf("%d: <%s, %f>\n", count, current->lexeme, current->value);
-            current = current->next;
-            count++;
+            printf(";\n");
         }
     }
-
-    printf("***********************\n\n");
 }

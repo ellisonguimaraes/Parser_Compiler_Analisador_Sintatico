@@ -26,7 +26,7 @@ identifier ({lether}|_)({lether}|{digit}|_)*
 "log" return LOG;
 "sqrt" return SQRT;
 "pow" return POW;
-"viewvars()" return VIEWVARS;
+"hashtable" return VIEWHASHTABLE;
 
 {white} { }
 {real} { yylval.v = atof(yytext); return NUMBER; }            

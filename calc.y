@@ -1,6 +1,5 @@
 // Run by WSL (Ubuntu 20.04) terminal: make ; ./calc
 
-
 /****************
 	PROLOGUE
 *****************/
@@ -8,9 +7,8 @@
 #include "StructureVariable.c"
 #include <math.h>
 #include <stdio.h>
-#include <glib.h>
 
-GHashTable* t_hash;
+hashtable* hash_table;
 
 int yyerror (char const *s);
 extern int yylex (void);
@@ -27,7 +25,7 @@ extern int yylex (void);
 // http://users.eecs.northwestern.edu/~wkliao/op-prec.htm
 
 // Definição dos Tokens/Símbolos Terminais (e sua precedência)
-%token VIEWVARS
+%token VIEWHASHTABLE
 %token SEPARATOR
 %token ATTR ADDATTR SUBATTR MULATTR DIVATTR MODATTR
 %token OR 
@@ -75,42 +73,44 @@ Line:
 	EOL
 	| Assign EOL { printf("Atribuição: %f\n", $1); }
 	| Expr EOL { printf("Expressão: %f\n", $1); }
+	| VIEWHASHTABLE LBRACKET RBRACKET EOL { show_ht(hash_table); }
 
 Assign:
 	VAR AssignOP Expr 
 		{ 
-			Variable* var = GetVar($1);
+			node* n = get_value_ht(hash_table, $1);
 
-			if (var == NULL) {
+			if(n == NULL)
+			{
 				if(strcmp($2, "=") == 0){
-					// Se for o operador ATTR(=), adicionamos na memória
-					AddVar($1, $3);
-					//g_hash_table_insert(t_hash, $1, &$3);
+					// Se for o operador ATTR(=), adicionamos na tabela hash
+					put_key_value_ht(hash_table, $1, $3);
 					$$ = $3;
 				} else {
-					// Se não for operador ATTR (=) é retornado um erro
+					// Se não for operador ATTR(=) é retornado um erro
 					char strerror[100] = "A variável '"; strcat(strerror, $1); strcat(strerror, "' NÃO foi declarada.");
 					yyerror(strerror); 
 					YYABORT;
 				}
+
 			} else {
-				// Se var existir, atualizamos baseado no operador
+				// Se n já existir, é feito somente a atualização com base no AssignOP escolhido
 				double result;
 
 				if(strcmp($2, "=") == 0)
 					result = $3;
 				else if(strcmp($2, "+=") == 0)
-					result = var->value + $3;
+					result = n->value + $3;
 				else if(strcmp($2, "-=") == 0)
-					result = var->value - $3;
+					result = n->value - $3;
 				else if(strcmp($2, "/=") == 0)
-					result = var->value / $3;
+					result = n->value / $3;
 				else if(strcmp($2, "*=") == 0)
-					result = var->value *= $3;
+					result = n->value *= $3;
 				else if(strcmp($2, "%=") == 0)
-					result = (int)var->value % (int)$3;
+					result = (int)n->value % (int)$3;
 				
-				UpdateVar($1, result);
+				put_key_value_ht(hash_table, $1, result);
 				$$ = result;
 			}
 		}
@@ -146,22 +146,22 @@ Func:
 
 Primary:
 	VAR 
-		{ 
-			// Busca na lista se o Lexeme já existe
-			Variable* var = GetVar($1);
-			//gpointer* value = g_hash_table_lookup(t_hash, $1);
-			if (var != NULL) {
-				// Se existir ele é retornado
-				$$ = var->value;
-			} else {
-				// Se não existir ocorre um erro
+		{
+			node* n = get_value_ht(hash_table, $1);
+
+			if(n == NULL)
+			{
+				// Se obter nulo, a variável não pertence a hashtable e é retornado um erro.
 				char strerror[100] = "A variável '";
 				strcat(strerror, $1);
 				strcat(strerror, "' NÃO foi declarada.");
 				yyerror(strerror);
 				YYABORT;
-			}	
+			}
+
+			$$ = n->value;
 		}
+
 	| NUMBER { $$ = $1; }
 	| LBRACKET Expr RBRACKET { $$ = $2; printf("(%f)\n", $2); }
 
@@ -173,7 +173,22 @@ int yyerror(char const *s) {
 }
 
 int main() {
-	t_hash = g_hash_table_new(g_str_hash, g_str_equal);
+	hash_table = build_hash_table();
+
+	/*
+	put_key_value_ht(hash_table, "oi", 50.5);
+	put_key_value_ht(hash_table, "ola", 9);
+	put_key_value_ht(hash_table, "mae", 7.5);
+	put_key_value_ht(hash_table, "kk", 1.5);
+	put_key_value_ht(hash_table, "ola", 20);
+
+	 show_ht(hash_table);
+
+	node* n = get_value_ht(hash_table, "kk");
+	if(n != NULL) printf("Achamos %s com valor %f.\n", n->key, n->value);
+
+	n = get_value_ht(hash_table, "haaa");
+	if(n != NULL) printf("Achamos %s com valor %f.\n", n->key, n->value); else printf("Não achamos haaa!"); */
 
     int ret = yyparse();
     if (ret){

@@ -49,7 +49,7 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    VIEWVARS = 258,
+    VIEWHASHTABLE = 258,
     SEPARATOR = 259,
     ATTR = 260,
     ADDATTR = 261,
@@ -89,7 +89,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 21 "calc.y"
+#line 19 "calc.y"
 
 	double v;
 	char l[50];
