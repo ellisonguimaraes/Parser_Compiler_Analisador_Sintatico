@@ -17,9 +17,9 @@ identifier ({lether}|_)({lether}|{digit}|_)*
 /************************************
     REGRAS: Padrões reconhecidos 
 
-    * yylval.value e yylval.lexeme foram as variáveis 
+    * yylval.v e yylval.l foram as variáveis 
     declaradas no Union do arquivo .y.
-    * 'log' e 'sqrt' precisam estar antes da regra do
+    * 'log', 'pow', 'hashtable' e 'sqrt' precisam estar antes da regra do
     identifier, já que as palavras pertencem a regra.
 ************************************/
 %%
@@ -40,7 +40,7 @@ identifier ({lether}|_)({lether}|{digit}|_)*
 "/=" return DIVATTR;
 "%=" return MODATTR;
 "||" return OR;
-"&&" return E;
+"&&" return AND;
 "|||" return EXCLUSIVEOR;
 "->" return IMPLICATION;
 "==" return EQUAL;
@@ -58,5 +58,4 @@ identifier ({lether}|_)({lether}|{digit}|_)*
 "(" return LBRACKET;
 ")" return RBRACKET;
 "\n" return EOL;
-
 %%

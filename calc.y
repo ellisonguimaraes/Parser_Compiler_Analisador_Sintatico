@@ -8,6 +8,7 @@
 #include <math.h>
 #include <stdio.h>
 
+// Definição da HashTable
 hashtable* hash_table;
 
 int yyerror (char const *s);
@@ -29,7 +30,7 @@ extern int yylex (void);
 %token SEPARATOR
 %token ATTR ADDATTR SUBATTR MULATTR DIVATTR MODATTR
 %token OR 
-%token E
+%token AND
 %token EXCLUSIVEOR IMPLICATION
 %token EQUAL DIFF
 %token LESS LESSOREQUAL MORE MOREOREQUAL
@@ -39,28 +40,40 @@ extern int yylex (void);
 %token NOT
 %token <v> NUMBER 
 %token <l> VAR
-%token NEG
 %token LBRACKET RBRACKET
 %token EOL
 
-// Definição da Associatividade dos Tokens (padrão: right-to-left)
+// Associatividade (padrão: right~left)
+%left SEPARATOR
 %left OR
+%left AND
+%left EXCLUSIVEOR IMPLICATION
+%left EQUAL DIFF
+%left LESS LESSOREQUAL MORE MOREOREQUAL
+%left ADD SUB
+%left MUL DIV MOD
+%left LBRACKET RBRACKET
 
 // Definindo os tipos da gramática
+%type <v> Expr
+
+%type <v> Log
+%type <v> LogAND
+%type <v> LogEXIM
+
 %type <v> Rel
 %type <v> RelLB
 
 %type <v> Assign
 %type <l> AssignOP
 
-%type <v> Expr
+%type <v> Math
 %type <v> Term
 %type <v> Func
 %type <v> Fact
 %type <v> Primary
 
 %type <l> Unary
-%type <v> End
 
 
 %define parse.error verbose
@@ -78,7 +91,7 @@ Input:
 Line:	
 	EOL
 	| Assign EOL { printf("Atribuição: %f\n", $1); }
-	| Rel EOL { printf("Expressão: %f\n", $1); }
+	| Expr EOL { printf("Expressão: %f\n", $1); }
 	| VIEWHASHTABLE LBRACKET RBRACKET EOL { show_ht(hash_table); }
 
 Assign:
@@ -129,22 +142,38 @@ AssignOP:
 	| MULATTR { strcpy($$, "*="); }
 	| MODATTR { strcpy($$, "%="); }
 
+Expr: 
+	Log;
+
+Log: 
+	LogAND
+	| Log OR LogAND { $$ = $1 || $3; printf("%f || %f\n", $1, $3); }
+
+LogAND: 
+	LogEXIM
+	| LogAND AND LogEXIM { $$ = $1 && $3; printf("%f && %f\n", $1, $3); }
+
+LogEXIM: 
+	Rel
+	| LogEXIM EXCLUSIVEOR Rel { $$ = !!$1 ^ !!$3; printf("%f XOR %f\n", $1, $3); }
+	| LogEXIM IMPLICATION Rel { $$ = !$1 || !!$3; printf("%f -> %f\n", $1, $3); }
+
 Rel:
 	RelLB
-	| Rel DIFF RelLB { $$ = $1 != $3; printf("%f == %f\n", $1, $3); }
-	| Rel EQUAL RelLB { $$ = $1 == $3; printf("%f != %f\n", $1, $3); }
+	| Rel DIFF RelLB { $$ = $1 != $3; printf("%f != %f\n", $1, $3); }
+	| Rel EQUAL RelLB { $$ = $1 == $3; printf("%f == %f\n", $1, $3); }
 
 RelLB:
-	Expr
-	| RelLB MORE Expr { $$ = $1 > $3; printf("%f > %f\n", $1, $3); }
-	| RelLB LESS Expr { $$ = $1 < $3; printf("%f < %f\n", $1, $3); }
-	| RelLB MOREOREQUAL Expr { $$ = $1 >= $3; printf("%f >= %f\n", $1, $3); }
-	| RelLB LESSOREQUAL Expr { $$ = $1 <= $3; printf("%f <= %f\n", $1, $3); }
+	Math
+	| RelLB MORE Math { $$ = $1 > $3; printf("%f > %f\n", $1, $3); }
+	| RelLB LESS Math { $$ = $1 < $3; printf("%f < %f\n", $1, $3); }
+	| RelLB MOREOREQUAL Math { $$ = $1 >= $3; printf("%f >= %f\n", $1, $3); }
+	| RelLB LESSOREQUAL Math { $$ = $1 <= $3; printf("%f <= %f\n", $1, $3); }
 
-Expr:
+Math:
 	Term { $$ = $1; }
-	| Expr ADD Term { $$ = $1 + $3; printf("%f + %f\n", $1, $3); }
-	| Expr SUB Term { $$ = $1 - $3; printf("%f - %f\n", $1, $3); }
+	| Math ADD Term { $$ = $1 + $3; printf("%f + %f\n", $1, $3); }
+	| Math SUB Term { $$ = $1 - $3; printf("%f - %f\n", $1, $3); }
 
 Term:
 	Fact { $$ = $1; }
@@ -154,7 +183,7 @@ Term:
 
 Fact:
 	Func { $$ = $1; }
-	| Unary Func  // ver porq coloquei end
+	| Unary Func
 		{ 
 			if (strcmp($1, "-") == 0) {
 				$$ = -$2;
@@ -191,15 +220,11 @@ Primary:
 		}
 
 	| NUMBER { $$ = $1; printf("Acesso ao número %f.\n", $1); }
-	| LBRACKET End RBRACKET { $$ = $2; printf("(%f)\n", $2); }
+	| LBRACKET Expr RBRACKET { $$ = $2; printf("(%f)\n", $2); }
 
 Unary: 
 	SUB { strcpy($$, "-"); }
 	| NOT { strcpy($$, "!"); }
-
-End:
-	Rel { $$ = $1; }
-
 
 	
 %%

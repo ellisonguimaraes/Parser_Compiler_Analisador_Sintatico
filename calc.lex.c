@@ -492,9 +492,9 @@ char *yytext;
 /************************************
     REGRAS: Padrões reconhecidos 
 
-    * yylval.value e yylval.lexeme foram as variáveis 
+    * yylval.v e yylval.l foram as variáveis 
     declaradas no Union do arquivo .y.
-    * 'log' e 'sqrt' precisam estar antes da regra do
+    * 'log', 'pow', 'hashtable' e 'sqrt' precisam estar antes da regra do
     identifier, já que as palavras pertencem a regra.
 ************************************/
 #line 501 "calc.lex.c"
@@ -851,7 +851,7 @@ return OR;
 case 16:
 YY_RULE_SETUP
 #line 43 "calc.l"
-return E;
+return AND;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
@@ -941,7 +941,7 @@ return EOL;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 62 "calc.l"
+#line 61 "calc.l"
 ECHO;
 	YY_BREAK
 #line 948 "calc.lex.c"
@@ -1949,6 +1949,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 62 "calc.l"
+#line 61 "calc.l"
 
 

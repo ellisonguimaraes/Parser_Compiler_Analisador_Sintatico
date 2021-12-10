@@ -58,7 +58,7 @@ extern int yydebug;
     DIVATTR = 264,
     MODATTR = 265,
     OR = 266,
-    E = 267,
+    AND = 267,
     EXCLUSIVEOR = 268,
     IMPLICATION = 269,
     EQUAL = 270,
@@ -78,10 +78,9 @@ extern int yydebug;
     NOT = 284,
     NUMBER = 285,
     VAR = 286,
-    NEG = 287,
-    LBRACKET = 288,
-    RBRACKET = 289,
-    EOL = 290
+    LBRACKET = 287,
+    RBRACKET = 288,
+    EOL = 289
   };
 #endif
 
@@ -89,12 +88,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 19 "calc.y"
+#line 20 "calc.y"
 
 	double v;
 	char l[50];
 
-#line 98 "calc.tab.h"
+#line 97 "calc.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
